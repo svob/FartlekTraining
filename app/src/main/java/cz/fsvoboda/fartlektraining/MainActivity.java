@@ -33,7 +33,7 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onBackPressed() {
         if (mPager.getCurrentItem() == 0) {
-            super.onBackPressed();  // Kdyz je na prvni strance, obslouzi to system
+            super.onBackPressed();  // Kdyz je na prvni strance, obslouzi to system -> vypnuti appky
         } else {
             mPager.setCurrentItem(mPager.getCurrentItem() - 1); // vrati se na predchozi stranku
         }
