@@ -1,10 +1,13 @@
 package cz.fsvoboda.fartlektraining;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,18 +25,27 @@ import com.dsi.ant.plugins.antplus.pccbase.PccReleaseHandle;
 
 import java.math.BigDecimal;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Filip on 9.5.2015.
  */
 
 public class MainFragment extends Fragment {
-
-    //private SeekBar seekBar;
     private TextView ahr;
     private TextView timeView;
     private TextView hrTitle;
     private TextView timeTitle;
+    private TextView instructions;
+    private TextView phase;
+    private CountDownTimer timer;
+    private int maxHr;
+    private int first;
+    private int second;
+    private int third;
+    private int hrForFirst;
+    private int hrForSecond;
+    private boolean accelerating = true;
 
     AntPlusHeartRatePcc hrPcc = null;
     protected PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
@@ -42,37 +54,155 @@ public class MainFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_main, container, false);
-/*
-        TextView text = (TextView) rootView.findViewById(R.id.pageCount);
 
-        Bundle bundle = getArguments();
-        if (bundle != null) {
-            int pos = bundle.getInt("position", 0);
-            text.setText(Integer.toString(pos));
-        }
-        */
         ahr = (TextView) rootView.findViewById(R.id.ahr);
         timeView = (TextView) rootView.findViewById(R.id.time);
         hrTitle = (TextView) rootView.findViewById(R.id.hrTitle);
         timeTitle = (TextView) rootView.findViewById(R.id.timeTitle);
+        instructions = (TextView) rootView.findViewById(R.id.instructions);
+        phase = (TextView) rootView.findViewById(R.id.phase);
+
+        instructions.setText("Klusej");
 
         Typeface type = Typeface.createFromAsset(getActivity().getAssets(), "fonts/OpenSans-Semibold.ttf");
         hrTitle.setTypeface(type);
+        timeTitle.setTypeface(type);
 
-        new CountDownTimer(30000, 1000) {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        maxHr = sharedPref.getInt("hr", 200);
+        first = sharedPref.getInt("first", 5);
+        second = sharedPref.getInt("second", 10);
+        third = sharedPref.getInt("third", 5);
 
-            public void onTick(long millisUntilFinished) {
-                //timeView.setText(Long.toString(millisUntilFinished / 1000));
-            }
+        hrForFirst = (int)(maxHr * 0.6);
+        hrForSecond = (int)(maxHr * 0.75);
 
-            public void onFinish() {
-                //mTextField.setText("done!");
-            }
-        }.start();
+        startFirstPhase();
 
         handleReset();
 
         return rootView;
+    }
+
+    public void startFirstPhase() {
+        phase.setText("Rozklusání");
+        timer = new CountDownTimer(first*60*1000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+                timeView.setText(String.format("%d:%d",
+                        TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished),
+                        TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)
+                                )));
+            }
+
+            public void onFinish() {
+                if (Integer.valueOf(ahr.getText().toString()) > (maxHr * 0.6))
+                    startSecondPhase();
+                else
+                    goUntilHrReached(hrForFirst);
+            }
+        }.start();
+    }
+
+    private void startSecondPhase() {
+        phase.setText("Trénink");
+        timer = new CountDownTimer(second*60*1000, 1000) {
+
+            public void onTick(final long millisUntilFinished) {
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int hr = Integer.valueOf(ahr.getText().toString());
+
+                        timeView.setText(String.format("%d:%d",
+                                TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished),
+                                TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
+                                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)
+                                        )));
+                        if (accelerating && hr < hrForSecond) {
+                            instructions.setText("Přidej");
+                        } else if (accelerating && hr > hrForSecond) {
+                            instructions.setText("Zpomal");
+                            accelerating = false;
+                        } else if (!accelerating && hr > hrForFirst) {
+                            instructions.setText("Zpomal");
+                        } else {
+                            instructions.setText("Přidej");
+                            accelerating = true;
+                        }
+                    }
+                });
+
+            }
+
+            public void onFinish() {
+                startThirdPhase();
+            }
+        }.start();
+    }
+
+    private void startThirdPhase() {
+        phase.setText("Vyklusání");
+        instructions.setText(" ");
+        timer = new CountDownTimer(third*60*1000, 1000) {
+
+            public void onTick(final long millisUntilFinished) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int hr = Integer.valueOf(ahr.getText().toString());
+
+                        timeView.setText(String.format("%d:%d",
+                                TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished),
+                                TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
+                                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)
+                                        )));
+                    }
+                });
+
+            }
+
+            public void onFinish() {
+                instructions.setText("A máme to za sebou");
+            }
+        }.start();
+    }
+
+    public void goUntilHrReached(final int targetHr) {
+        if (Integer.valueOf(ahr.getText().toString()) < targetHr) {
+            instructions.setText("Přidej");
+            timer = new CountDownTimer(300000, 1000) {
+
+                public void onTick(long millisUntilFinished) {
+                    if (Integer.valueOf(ahr.getText().toString()) > targetHr) {
+                        timer.cancel();
+                        startSecondPhase();
+                    }
+                }
+
+                public void onFinish() {
+                    goUntilHrReached(targetHr);
+                }
+            }.start();
+        }
+        else {
+            instructions.setText("Zpomal");
+            timer = new CountDownTimer(300000, 1000) {
+
+                public void onTick(long millisUntilFinished) {
+                    if (Integer.valueOf(ahr.getText().toString()) < targetHr) {
+                        timer.cancel();
+                        startSecondPhase();
+                    }
+                }
+
+                public void onFinish() {
+                    goUntilHrReached(targetHr);
+                }
+            }.start();
+        }
     }
 
     protected void requestAccessToPcc() {
@@ -92,7 +222,7 @@ public class MainFragment extends Fragment {
         requestAccessToPcc();
     }
 
-    protected void showDataDisplay(String status) {
+    protected void resetDisplay() {
         // Reset the display
         ahr.setText("---");
     }
@@ -105,11 +235,7 @@ public class MainFragment extends Fragment {
             @Override
             public void onNewHeartRateData(long estTimestamp, EnumSet<EventFlag> eventFlags, int computedHeartRate, long heartBeatCount, BigDecimal heartBeatEventTime, AntPlusHeartRatePcc.DataState dataState) {
                 // Mark heart rate with asterisk if zero detected
-                final String textHeartRate = String.valueOf(computedHeartRate) +((AntPlusHeartRatePcc.DataState.ZERO_DETECTED.equals(dataState)) ? "*" : "");
-
-                // Mark heart beat count and heart beat event time with asterisk if initial value
-                final String textHeartBeatCount = String.valueOf(heartBeatCount) + ((AntPlusHeartRatePcc.DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
-                final String textHeartBeatEventTime = String.valueOf(heartBeatEventTime) + ((AntPlusHeartRatePcc.DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
+                final String textHeartRate = String.valueOf(computedHeartRate);
 
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -126,7 +252,7 @@ public class MainFragment extends Fragment {
                 // Handle the result, connecting to events on success or reporting failure to user.
                 @Override
                 public void onResultReceived(AntPlusHeartRatePcc antPlusHeartRatePcc, RequestAccessResult requestAccessResult, DeviceState deviceState) {
-                    showDataDisplay("Connecting");
+                    resetDisplay();
                     switch(requestAccessResult) {
                         case SUCCESS:
                             hrPcc = antPlusHeartRatePcc;
@@ -136,7 +262,7 @@ public class MainFragment extends Fragment {
                             Toast.makeText(getActivity(), "Channel not available", Toast.LENGTH_SHORT).show();
                             break;
                         case ADAPTER_NOT_DETECTED:
-                            Toast.makeText(getActivity(), "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getActivity(), "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.", Toast.LENGTH_LONG).show();
                             break;
                         case BAD_PARAMS:
                             // Note: Since we compose all the params ourself, we should never see this result

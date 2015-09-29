@@ -1,7 +1,11 @@
 package cz.fsvoboda.fartlektraining;
 
 import java.util.Locale;
+import java.util.Map;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.app.Fragment;
@@ -9,14 +13,16 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.KeyEvent;
 
 
 public class MainActivity extends FragmentActivity {
     private static final int NUM_PAGES = 2; // pocet stranek (wizard steps)
-    private ViewPager mPager;       // Obsluhuje swipe-prechod na dalsi stranku
+    public ViewPager mPager;       // Obsluhuje swipe-prechod na dalsi stranku
     private PagerAdapter mPagerAdapter;     // Poskytuje stranky pro ViewPager
     Dpad mDpad = new Dpad();
+    private boolean disabledPad = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +33,14 @@ public class MainActivity extends FragmentActivity {
         mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
 
-
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPref.getBoolean("firstRun", true)) {
+            sharedPref.edit().putInt("hr", 200).apply();
+            sharedPref.edit().putInt("first", 1).apply();
+            sharedPref.edit().putInt("second", 5).apply();
+            sharedPref.edit().putInt("third", 1).apply();
+            sharedPref.edit().putBoolean("firstRun", false).apply();
+        }
     }
 
     @Override
@@ -47,11 +60,11 @@ public class MainActivity extends FragmentActivity {
             switch (press) {
                 case Dpad.LEFT:
                     // Do something for LEFT direction press
-                    mPager.setCurrentItem(mPager.getCurrentItem()-1);
+                    mPager.setCurrentItem(mPager.getCurrentItem() - 1);
                     return true;
                 case Dpad.RIGHT:
                     // Do something for RIGHT direction press
-                    mPager.setCurrentItem(mPager.getCurrentItem()+1);
+                     mPager.setCurrentItem(mPager.getCurrentItem() + 1);
                     return true;
             }
         }
@@ -86,5 +99,9 @@ public class MainActivity extends FragmentActivity {
         public int getCount() {
             return NUM_PAGES;
         }
+    }
+
+    public void switchDpadState() {
+        disabledPad = !disabledPad;
     }
 }

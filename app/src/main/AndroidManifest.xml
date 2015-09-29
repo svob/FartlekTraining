@@ -21,6 +21,10 @@
             android:name=".MainActivity2"
             android:label="@string/title_activity_main_activity2" >
         </activity>
+        <activity
+            android:name=".ChangeSettingsActivity"
+            android:label="@string/title_activity_change_settings" >
+        </activity>
     </application>
 
 </manifest>
