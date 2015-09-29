@@ -29,7 +29,7 @@ public class ChangeSettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change_settings);
 
-        ((TextView) findViewById(R.id.leftArrow)).setText("<");
+        ((TextView) findViewById(R.id.leftArrow)).setText("<");     // znak "<" neslo nastavit rovnou v xml layoutu
 
         valueView = (TextView) findViewById(R.id.value);
 
@@ -66,13 +66,13 @@ public class ChangeSettingsActivity extends Activity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == 23) {
+        if (keyCode == Dpad.CENTER) {
             sharedPref.edit().putInt(key, value).apply();
             setResult(Activity.RESULT_OK);
             finish();
         }
 
-        if (keyCode == 26) {
+        if (keyCode == 26) {    // powerOff button (back)
             finish();
         }
 
@@ -88,7 +88,7 @@ public class ChangeSettingsActivity extends Activity {
                     return true;
             }
         }
-        return super.onKeyDown(keyCode, event);     // kdyz to tady nebude, neprovede se metody onBackPressed
+        return super.onKeyDown(keyCode, event);
     }
 
     public void increaseValue() {

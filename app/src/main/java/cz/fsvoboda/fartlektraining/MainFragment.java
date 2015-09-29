@@ -34,8 +34,6 @@ import java.util.concurrent.TimeUnit;
 public class MainFragment extends Fragment {
     private TextView ahr;
     private TextView timeView;
-    private TextView hrTitle;
-    private TextView timeTitle;
     private TextView instructions;
     private TextView phase;
     private CountDownTimer timer;
@@ -57,12 +55,10 @@ public class MainFragment extends Fragment {
 
         ahr = (TextView) rootView.findViewById(R.id.ahr);
         timeView = (TextView) rootView.findViewById(R.id.time);
-        hrTitle = (TextView) rootView.findViewById(R.id.hrTitle);
-        timeTitle = (TextView) rootView.findViewById(R.id.timeTitle);
+        TextView hrTitle = (TextView) rootView.findViewById(R.id.hrTitle);
+        TextView timeTitle = (TextView) rootView.findViewById(R.id.timeTitle);
         instructions = (TextView) rootView.findViewById(R.id.instructions);
         phase = (TextView) rootView.findViewById(R.id.phase);
-
-        instructions.setText("Klusej");
 
         Typeface type = Typeface.createFromAsset(getActivity().getAssets(), "fonts/OpenSans-Semibold.ttf");
         hrTitle.setTypeface(type);
@@ -77,8 +73,6 @@ public class MainFragment extends Fragment {
         hrForFirst = (int)(maxHr * 0.6);
         hrForSecond = (int)(maxHr * 0.75);
 
-        startFirstPhase();
-
         handleReset();
 
         return rootView;
@@ -86,6 +80,7 @@ public class MainFragment extends Fragment {
 
     public void startFirstPhase() {
         phase.setText("Rozklusání");
+        instructions.setText("Klusej");
         timer = new CountDownTimer(first*60*1000, 1000) {
 
             public void onTick(long millisUntilFinished) {
@@ -95,7 +90,6 @@ public class MainFragment extends Fragment {
                                 TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)
                                 )));
             }
-
             public void onFinish() {
                 if (Integer.valueOf(ahr.getText().toString()) > (maxHr * 0.6))
                     startSecondPhase();
@@ -134,9 +128,7 @@ public class MainFragment extends Fragment {
                         }
                     }
                 });
-
             }
-
             public void onFinish() {
                 startThirdPhase();
             }
@@ -161,9 +153,7 @@ public class MainFragment extends Fragment {
                                         )));
                     }
                 });
-
             }
-
             public void onFinish() {
                 instructions.setText("A máme to za sebou");
             }
@@ -181,7 +171,6 @@ public class MainFragment extends Fragment {
                         startSecondPhase();
                     }
                 }
-
                 public void onFinish() {
                     goUntilHrReached(targetHr);
                 }
@@ -197,7 +186,6 @@ public class MainFragment extends Fragment {
                         startSecondPhase();
                     }
                 }
-
                 public void onFinish() {
                     goUntilHrReached(targetHr);
                 }
@@ -222,11 +210,6 @@ public class MainFragment extends Fragment {
         requestAccessToPcc();
     }
 
-    protected void resetDisplay() {
-        // Reset the display
-        ahr.setText("---");
-    }
-
     /**
      * Switches the active view to the data display and subscribes to all the data events
      */
@@ -234,7 +217,6 @@ public class MainFragment extends Fragment {
         hrPcc.subscribeHeartRateDataEvent(new AntPlusHeartRatePcc.IHeartRateDataReceiver() {
             @Override
             public void onNewHeartRateData(long estTimestamp, EnumSet<EventFlag> eventFlags, int computedHeartRate, long heartBeatCount, BigDecimal heartBeatEventTime, AntPlusHeartRatePcc.DataState dataState) {
-                // Mark heart rate with asterisk if zero detected
                 final String textHeartRate = String.valueOf(computedHeartRate);
 
                 getActivity().runOnUiThread(new Runnable() {
@@ -252,11 +234,11 @@ public class MainFragment extends Fragment {
                 // Handle the result, connecting to events on success or reporting failure to user.
                 @Override
                 public void onResultReceived(AntPlusHeartRatePcc antPlusHeartRatePcc, RequestAccessResult requestAccessResult, DeviceState deviceState) {
-                    resetDisplay();
                     switch(requestAccessResult) {
                         case SUCCESS:
                             hrPcc = antPlusHeartRatePcc;
                             subscribeToHrEvents();
+                            startFirstPhase();
                             break;
                         case CHANNEL_NOT_AVAILABLE:
                             Toast.makeText(getActivity(), "Channel not available", Toast.LENGTH_SHORT).show();

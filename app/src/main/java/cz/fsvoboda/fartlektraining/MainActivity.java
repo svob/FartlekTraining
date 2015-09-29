@@ -46,7 +46,9 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onBackPressed() {
         if (mPager.getCurrentItem() == 0) {
-            super.onBackPressed();  // Kdyz je na prvni strance, obslouzi to system -> vypnuti appky
+            finish();
+            System.exit(0);
+            // super.onBackPressed();  // Kdyz je na prvni strance, obslouzi to system -> vypnuti appky ........ nefungovalo vzdy, proto nahrazeno vlastnim vypnutim
         } else {
             mPager.setCurrentItem(mPager.getCurrentItem() - 1); // vrati se na predchozi stranku
         }
@@ -79,12 +81,6 @@ public class MainActivity extends FragmentActivity {
 
         @Override
         public Fragment getItem(int position) {
-            /*
-            MainFragment fragment = new MainFragment();
-            Bundle args = new Bundle();
-            args.putInt("position", position);
-            fragment.setArguments(args);
-            */
             switch (position) {
                 case 0:
                     return new MainFragment();
@@ -99,9 +95,5 @@ public class MainActivity extends FragmentActivity {
         public int getCount() {
             return NUM_PAGES;
         }
-    }
-
-    public void switchDpadState() {
-        disabledPad = !disabledPad;
     }
 }

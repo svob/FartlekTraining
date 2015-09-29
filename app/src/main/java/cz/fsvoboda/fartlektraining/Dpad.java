@@ -11,7 +11,7 @@ public class Dpad {
     final static int LEFT     = 1;
     final static int RIGHT    = 2;
     final static int DOWN     = 3;
-    final static int CENTER   = 4;
+    final static int CENTER   = 23;
 
     int directionPressed = -1; // initialized to -1
 

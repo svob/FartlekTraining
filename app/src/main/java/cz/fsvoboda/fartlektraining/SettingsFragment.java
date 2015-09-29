@@ -83,16 +83,6 @@ public class SettingsFragment extends ListFragment {
         intent.putExtra("key", editingKey);
         startActivityForResult(intent, 1);
         getActivity().overridePendingTransition(0, 0);
-/*
-        if (!editing) {
-        TextView value = (TextView) v.findViewById(R.id.value);
-        SpannableStringBuilder sb = new SpannableStringBuilder("< "+value.getText().toString()+" >");
-        sb.setSpan(new ForegroundColorSpan(Color.rgb(255, 179, 0)), 0, 1, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-        sb.setSpan(new ForegroundColorSpan(Color.rgb(255, 179, 0)), sb.length()-1, sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-        sb.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, sb.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-        value.setText(sb);
-            editing = true;
-        }*/
     }
 
     @Override
